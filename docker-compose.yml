@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  seraph-game:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seraph-last-stand
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Volume para logs
+      - ./logs:/var/log/nginx
+      # Volume para certificados SSL (quando configurar)
+      # - ./ssl:/etc/ssl/certs
+      # - ./ssl:/etc/ssl/private
+    environment:
+      - NGINX_HOST=seraph.alexsandrof.com.br
+    networks:
+      - seraph-network
+
+  # Opcional: Adicionar um serviço para renovação automática de certificados SSL
+  # certbot:
+  #   image: certbot/certbot
+  #   container_name: seraph-certbot
+  #   volumes:
+  #     - ./ssl:/etc/letsencrypt
+  #     - ./certbot:/var/www/certbot
+  #   command: certonly --webroot --webroot-path=/var/www/certbot --email seu-email@exemplo.com --agree-tos --no-eff-email -d seraph.alexsandrof.com.br
+
+networks:
+  seraph-network:
+    driver: bridge
+
+volumes:
+  seraph-logs:
+    driver: local
