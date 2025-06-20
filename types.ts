@@ -52,6 +52,7 @@ export interface PlayerStats {
 }
 
 export interface PlayerState extends PlayerStats {
+  id: string; // Added for identification
   x: number;
   y: number;
   width: number; // Base width, visual width can be affected by playerSizeModifier
@@ -70,19 +71,54 @@ export interface PlayerState extends PlayerStats {
   hasRageActive?: boolean;   // For Rage card
 }
 
+export type FirearmType = 'rifle' | 'smg' | 'shotgun' | 'beam_rifle' | 'heavy_pistol'; // Descriptive
+
 export interface EnemyType {
   id: string;
   name: string;
   baseHp: number;
-  baseSpeed: number;
-  baseDamage: number;
+  baseSpeed: number; // Base movement speed
+  baseDamage: number; // Damage per projectile
   width: number;
   height: number;
-  color: string; // Outline color
+  color: string;
   points: number;
   expValue: number;
-  attackCooldown?: number; // For enemies that shoot
-  projectileSpeed?: number; // Speed of projectiles if the enemy shoots
+  firearmType: FirearmType; // Descriptive type of weapon
+
+  attackCooldown: number; // Time between shots or bursts (ms)
+  attackRange: number; // Max distance to attempt attack
+  attackTelegraphTime: number; // Time enemy might pause/aim before firing
+  
+  projectileSpeed: number;
+  projectileColor?: string; // Optional: if different from ENEMY_PROJECTILE_COLOR
+  projectileVisualType?: ProjectileVisualType; // Optional: if different from ENEMY_PROJECTILE_VISUAL_TYPE
+
+  // Firearm specific parameters
+  projectilesInBurst?: number; // For burst weapons (e.g., rifle)
+  burstInterval?: number; // Time between shots in a burst (ms)
+  
+  shotgunPelletCount?: number; // For shotgun type
+  shotgunSpreadAngle?: number; // Spread for shotgun pellets
+
+  smgSpreadAngle?: number; // Slight spread for SMG
+
+  // Wave specific for beam_rifle (Shooter Basic)
+  projectileWaveAmplitude?: number;
+  projectileWaveFrequency?: number;
+
+  // AI Behavior
+  optimalFiringDistanceMin: number;
+  optimalFiringDistanceMax: number;
+  separationDistance: number; // How much space to keep from other enemies
+
+  // Elite Variant Modifiers
+  eliteAttackCooldownMultiplier?: number; // Affects fire rate
+  eliteDamageMultiplier?: number; // Affects projectile damage
+  eliteProjectileSpeedMultiplier?: number;
+  eliteProjectilesInBurstAdd?: number;
+  eliteShotgunPelletCountAdd?: number;
+  eliteWaveAmplitudeMultiplier?: number;
 }
 
 export interface EnemyState {
@@ -93,55 +129,76 @@ export interface EnemyState {
   height: number;
   hp: number;
   maxHp: number;
-  type: string; // EnemyType ID
-  speed: number;
-  damage: number; // Contact damage or projectile damage
-  color: string; // Now primarily for outline or specific visual queues, not bg
-  targetY?: number; // Y-coordinate where enemy stops descending
-  horizontalSpeed?: number;
+  type: string; // ID of EnemyType
+  speed: number; // Current movement speed
+  damage: number; // Current projectile damage
+  color: string;
+  targetY?: number; // Might be used for initial positioning or dynamic vertical adjustment
+  horizontalSpeed?: number; // Current horizontal movement speed
   horizontalDirection?: 1 | -1;
-  reachedTargetY: boolean;
-  lastAttackTime?: number; // Timestamp of the last attack for cooldown
+  reachedTargetY: boolean; // True if enemy reached its general vertical patrol/engagement zone
+  lastAttackTime: number; // Timestamp of the last shot/burst start
 
-  // Stage 1 Card Mechanics
   bleeding?: {
     dps: number;
     durationRemaining: number;
     lastTickTime: number;
-    sourcePlayerId?: string; // Optional: if multiple players or sources
+    sourcePlayerId?: string;
   };
 
-  // Stage 2 Card Mechanics
-  slowFactor: number; // 0 to coldMaxSlow (e.g., 0 to 0.8 for 80% slow)
-  lastSlowedTime: number; // Timestamp for Cold effect duration
+  slowFactor: number;
+  lastSlowedTime: number;
+
+  attackState: 'idle' | 'pursuing' | 'aiming' | 'firing' | 'cooldown'; // Updated states
+  attackProgressTimer: number; // For timing aiming/telegraph and firing/burst actions
+  
+  // Burst fire tracking
+  currentBurstShotsFired: number;
+  lastBurstShotTime: number; // For time between individual shots in a burst
+
+  // Elite properties
+  isElite?: boolean;
+  deathEffectsProcessed?: boolean;
 }
 
-export type ProjectileVisualType = 'square' | 'circle' | 'spark';
+export type ProjectileVisualType = 'square' | 'circle' | 'spark' | 'pellet'; // Added pellet for shotgun
 
 export interface ProjectileState {
   id:string;
   x: number;
   y: number;
-  width: number; // Base size, visual size might be affected by type
-  height: number; // Base size
+  width: number;
+  height: number;
   damage: number;
-  dx: number; // Velocity x component
-  dy: number; // Velocity y component
+  dx: number;
+  dy: number;
   isPlayerProjectile: boolean;
   durability: number;
-  color: string; // e.g., '#FF0000' for red, used by specific projectile types
+  color: string;
   effects?: Partial<ProjectileEffects>;
   visualType: ProjectileVisualType;
-  spawnTime: number; // For effects like limited lifespan if needed
-  angle?: number; // Optional: store original angle for some effects
-  isFragment?: boolean; // For Fragmentation card
+  spawnTime: number;
+  angle?: number;
+  isCrit?: boolean; // For damage numbers
+
+  // Properties for specific enemy projectile behaviors if needed beyond basic straight shot
+  // Example: Wave from Shooter Basic
+  initialY?: number;
+  waveAmplitude?: number;
+  waveFrequency?: number;
+  currentWaveTime?: number;
+  // Homing and Gravity were for previous iteration, might be removed if not used by new firearm types
+  applyGravity?: boolean;
+  gravityValue?: number;
+  homingTargetId?: string;
+  homingFactor?: number;
 }
 
 export interface ProjectileEffects {
   homing?: boolean;
   piercing?: boolean;
   exploding?: boolean;
-  fragmentationCount?: number; // Number of fragments on explosion/hit
+  fragmentationCount?: number;
 }
 
 export enum CardRarity {
@@ -149,14 +206,14 @@ export enum CardRarity {
   UNCOMMON = 'Uncommon',
   EPIC = 'Epic',
   ASCENSION = 'Ascension',
-  SPECIAL = 'Special' // For staff unlocks, etc.
+  SPECIAL = 'Special'
 }
 
 export interface CardEffect {
-  stat: keyof PlayerStats | 'playerSize' | 'playerSizeModifier'; // Allow specific non-stat effects
+  stat: keyof PlayerStats | 'playerSize' | 'playerSizeModifier';
   value: number;
   mode: 'add' | 'multiply_base' | 'multiply_total' | 'set';
-  description?: string; // Optional specific description for this effect
+  description?: string;
 }
 
 export interface CardDefinition {
@@ -166,9 +223,9 @@ export interface CardDefinition {
   rarity: CardRarity;
   effects: CardEffect[];
   maxStacks?: number;
-  onPickup?: (player: PlayerState) => PlayerState | void; // For complex logic
+  onPickup?: (player: PlayerState) => PlayerState | void;
   cardType?: 'standard' | 'staff_unlock';
-  staffToUnlockId?: string; // If cardType is 'staff_unlock'
+  staffToUnlockId?: string;
 }
 
 export interface AscensionDefinition extends CardDefinition {
@@ -182,7 +239,6 @@ export interface HatDefinition {
   name: string;
   description: string;
   effects: CardEffect[];
-  // Visuals will be simplified to white outlines, handled in component
 }
 
 export interface StaffDefinition {
@@ -191,14 +247,14 @@ export interface StaffDefinition {
   description: string;
   baseDamageModifier?: number;
   baseAttackSpeedModifier?: number;
-  projectileType?: string; // e.g. 'homing', 'triple', 'beam'
-  projectileColor?: string; // Default color for projectiles from this staff
+  projectileType?: string;
+  projectileColor?: string;
   projectileVisualType?: ProjectileVisualType;
   projectileBaseSpeed?: number;
-  spreadAngle?: number; // For multi-shot staffs like Trident
-  shotCount?: number; // For multi-shot staffs
-  unlockLevel?: number; // Level at which this staff can be offered as an unlock
-  effects?: CardEffect[]; // Optional effects applied when this staff is equipped
+  spreadAngle?: number;
+  shotCount?: number;
+  unlockLevel?: number;
+  effects?: CardEffect[];
 }
 
 export type GameStatus = 'START_SCREEN' | 'PLAYING' | 'CARD_SELECTION' | 'GAME_OVER' | 'PAUSED';
@@ -208,42 +264,47 @@ export interface GameState {
   player: PlayerState;
   enemies: EnemyState[];
   projectiles: ProjectileState[];
-  // wave: number; // Replaced by player level for primary progression
   score: number;
-  gameTime: number; // total time elapsed for things like cooldowns
-  lastShotTime: number;
+  gameTime: number;
+  enemiesKilled: number; // Added to track enemies killed
+  lastShotTime: number; // Player's last shot time
   offeredCards: CardDefinition[];
   particleEffects: ParticleEffect[];
   lastEnemySpawnTime: number;
-  activeCardIcons: { id: string, count: number, rarity: CardRarity }[]; // For UI display
-  mousePosition: { x: number, y: number }; // Relative to game area
+  activeCardIcons: { id: string, count: number, rarity: CardRarity }[];
+  mousePosition: { x: number, y: number };
 }
 
 export interface ParticleEffect {
   id: string;
   x: number;
   y: number;
-  type: 'explosion' | 'hit_spark' | 'level_up' | 'bleed_tick' | 'thunderbolt_impact' | 'barrier_active' | 'cold_hit' | 'fragment_spawn' | 'ascension_activate';
+  type: 'explosion' | 'hit_spark' | 'level_up' | 'bleed_tick' |
+        'thunderbolt_impact' | 'barrier_active' | 'cold_hit' | 'fragment_spawn' |
+        'ascension_activate' | 'elite_aura' | 'muzzle_flash' | 'damage_number'; // Added damage_number
   creationTime: number;
   duration: number;
-  size: number; // Base size of particles
-  color: string; // e.g. '#FFA500'
-  particleCount?: number; // Number of individual specks in the effect
+  size: number;
+  color: string;
+  particleCount?: number;
   particleSpeed?: number;
   particleShape?: 'square' | 'circle' | 'spark';
-  fixedPosition?: boolean; // For particles that should not spread, like barrier
+  fixedPosition?: boolean;
+  angle?: number; // For directional muzzle flash
+  text?: string; // For damage numbers
+  isCritEffect?: boolean; // For damage numbers
 }
 
 // Global game constants
 export const GAME_WIDTH = 800;
 export const GAME_HEIGHT = 600;
 export const PLAYER_INITIAL_X = GAME_WIDTH / 2;
-export const PLAYER_INITIAL_Y = GAME_HEIGHT - 80; // Adjusted for terrain
-export const PLAYER_WIDTH = 20; // Slimmer player
-export const PLAYER_HEIGHT = 30; // Slimmer player
-export const GRAVITY = 0.7; // Slightly less floaty
-export const GROUND_LEVEL = GAME_HEIGHT - 60; // Adjusted for visible terrain height
-export const ENEMY_MAX_DEPTH_FACTOR = 0.7; // Enemies stop around 70% of screen height
+export const PLAYER_INITIAL_Y = GAME_HEIGHT - 80;
+export const PLAYER_WIDTH = 20;
+export const PLAYER_HEIGHT = 30;
+export const GRAVITY = 0.7; // Player gravity
+export const GROUND_LEVEL = GAME_HEIGHT - 60;
+export const ENEMY_MAX_DEPTH_FACTOR = 0.7; // Less relevant now
 
 // Terrain definition (simple blocks)
 export interface TerrainBlock {
@@ -253,30 +314,18 @@ export interface TerrainBlock {
   height: number;
 }
 export const TERRAIN_BLOCKS: TerrainBlock[] = [
-  // A simple flat ground with some variations, like the screenshot
-  // Main floor
   { x: 0, y: GAME_HEIGHT - 40, width: GAME_WIDTH, height: 40 },
-  // Some raised platforms (example)
   { x: 100, y: GAME_HEIGHT - 80, width: 150, height: 40 },
   { x: 300, y: GAME_HEIGHT - 120, width: 100, height: 40 },
   { x: 550, y: GAME_HEIGHT - 80, width: 150, height: 40 },
-  // Create a more varied terrain based on screenshot.
-  // Left side stairs/blocks
   { x: 0, y: GAME_HEIGHT - 40, width: 80, height: 40 },
   { x: 0, y: GAME_HEIGHT - 60, width: 60, height: 20 },
   { x: 0, y: GAME_HEIGHT - 80, width: 40, height: 20 },
-
-  // Middle low ground
   { x: 80, y: GAME_HEIGHT - 20, width: 200, height: 20 },
-
-  // Central platform
   { x: 280, y: GAME_HEIGHT - 60, width: 120, height: 20 },
   { x: 280, y: GAME_HEIGHT - 40, width: 120, height: 20 },
-
-
-  // Right side blocks/stairs
   { x:GAME_WIDTH - 80, y: GAME_HEIGHT - 40, width: 80, height: 40},
   { x:GAME_WIDTH - 60, y: GAME_HEIGHT - 60, width: 60, height: 20},
   { x:GAME_WIDTH - 40, y: GAME_HEIGHT - 80, width: 40, height: 20},
-  { x:GAME_WIDTH - 180, y: GAME_HEIGHT - 60, width: 100, height: 20}, // platform before stairs
+  { x:GAME_WIDTH - 180, y: GAME_HEIGHT - 60, width: 100, height: 20},
 ];

@@ -1,5 +1,5 @@
 
-import { CardDefinition, CardRarity, HatDefinition, StaffDefinition, AscensionDefinition, PlayerStats, EnemyType, ProjectileVisualType } from './types';
+import { CardDefinition, CardRarity, HatDefinition, StaffDefinition, AscensionDefinition, PlayerStats, EnemyType, ProjectileVisualType, FirearmType } from './types';
 
 // --- EXP & LEVELING ---
 export const BASE_EXP_TO_NEXT_LEVEL = 100;
@@ -59,7 +59,7 @@ export const STAFFS: StaffDefinition[] = [
     name: "Trident",
     description: "Shoots 3 projectiles in a spread.",
     baseAttackSpeedModifier: 1.15, // Slightly slower
-    projectileType: 'multishot', 
+    projectileType: 'multishot',
     projectileColor: '#00FFFF', // Cyan
     projectileVisualType: 'spark',
     projectileBaseSpeed: 9,
@@ -123,56 +123,56 @@ const STAGE1_EPIC_CARDS: CardDefinition[] = [
 
 // Stage 2 Added Cards
 const STAGE2_UNCOMMON_CARDS: CardDefinition[] = [
-  { 
-    id: 'fragmentation_uncommon', name: 'Fragmentation', 
-    description: `When killed, enemies release ${FRAGMENTATION_COUNT_BASE} weaker projectiles in random directions.`, 
-    rarity: CardRarity.UNCOMMON, effects: [], 
-    onPickup: (player) => { 
-      player.hasFragmentation = true; 
-      player.fragmentationCount = (player.fragmentationCount || 0) + FRAGMENTATION_COUNT_BASE; 
+  {
+    id: 'fragmentation_uncommon', name: 'Fragmentation',
+    description: `When killed, enemies release ${FRAGMENTATION_COUNT_BASE} weaker projectiles in random directions.`,
+    rarity: CardRarity.UNCOMMON, effects: [],
+    onPickup: (player) => {
+      player.hasFragmentation = true;
+      player.fragmentationCount = (player.fragmentationCount || 0) + FRAGMENTATION_COUNT_BASE;
       player.fragmentationDamageMultiplier = player.fragmentationDamageMultiplier ?? FRAGMENTATION_DAMAGE_MULTIPLIER_BASE;
-    } 
+    }
   },
-  { 
-    id: 'thunderbolt_uncommon', name: 'Thunderbolt', 
-    description: `Calls ${THUNDERBOLT_COUNT} thunderbolts from the skies every ${THUNDERBOLT_INTERVAL_BASE / 1000} seconds.`, 
-    rarity: CardRarity.UNCOMMON, effects: [], 
-    onPickup: (player) => { 
-      player.triggersThunderbolts = true; 
-      player.thunderboltDamage = (player.thunderboltDamage ?? THUNDERBOLT_DAMAGE_BASE); 
-      player.thunderboltInterval = player.thunderboltInterval || THUNDERBOLT_INTERVAL_BASE; 
-      player.lastThunderboltTime = Date.now(); 
-    } 
+  {
+    id: 'thunderbolt_uncommon', name: 'Thunderbolt',
+    description: `Calls ${THUNDERBOLT_COUNT} thunderbolts from the skies every ${THUNDERBOLT_INTERVAL_BASE / 1000} seconds.`,
+    rarity: CardRarity.UNCOMMON, effects: [],
+    onPickup: (player) => {
+      player.triggersThunderbolts = true;
+      player.thunderboltDamage = (player.thunderboltDamage ?? THUNDERBOLT_DAMAGE_BASE);
+      player.thunderboltInterval = player.thunderboltInterval || THUNDERBOLT_INTERVAL_BASE;
+      player.lastThunderboltTime = Date.now();
+    }
   },
 ];
 
 const STAGE2_EPIC_CARDS: CardDefinition[] = [
-  { 
-    id: 'appraisal_epic', name: 'Appraisal', 
-    description: '+1 item choice from now on.', 
+  {
+    id: 'appraisal_epic', name: 'Appraisal',
+    description: '+1 item choice from now on.',
     rarity: CardRarity.EPIC, effects: [{ stat: 'appraisalStacks', value: 1, mode: 'add' }],
-    maxStacks: 2, 
+    maxStacks: 2,
   },
-  { 
-    id: 'barrier_epic_stage2', name: 'Barrier', 
-    description: `Creates a shield that blocks ${BARRIER_HITS_BASE} damage once every ${BARRIER_COOLDOWN_BASE / 1000} seconds.`, 
-    rarity: CardRarity.EPIC, effects: [], 
-    onPickup: (player) => { 
-      player.hasBarrier = true; 
-      player.barrierCooldown = player.barrierCooldown || BARRIER_COOLDOWN_BASE; 
+  {
+    id: 'barrier_epic_stage2', name: 'Barrier',
+    description: `Creates a shield that blocks ${BARRIER_HITS_BASE} damage once every ${BARRIER_COOLDOWN_BASE / 1000} seconds.`,
+    rarity: CardRarity.EPIC, effects: [],
+    onPickup: (player) => {
+      player.hasBarrier = true;
+      player.barrierCooldown = player.barrierCooldown || BARRIER_COOLDOWN_BASE;
       player.barrierHitsRemaining = (player.barrierHitsRemaining || 0) + BARRIER_HITS_BASE;
-      player.lastBarrierActivationTime = Date.now() - (player.barrierCooldown || BARRIER_COOLDOWN_BASE); 
-    } 
+      player.lastBarrierActivationTime = Date.now() - (player.barrierCooldown || BARRIER_COOLDOWN_BASE);
+    }
   },
-  { 
-    id: 'cold_epic', name: 'Cold', 
-    description: `Enemies get ${COLD_SLOW_FACTOR_BASE*100}% slower every time they take damage (up to ${COLD_MAX_SLOW_BASE*100}%).`, 
-    rarity: CardRarity.EPIC, effects: [], 
-    onPickup: (player) => { 
-      player.appliesCold = true; 
+  {
+    id: 'cold_epic', name: 'Cold',
+    description: `Enemies get ${COLD_SLOW_FACTOR_BASE*100}% slower every time they take damage (up to ${COLD_MAX_SLOW_BASE*100}%).`,
+    rarity: CardRarity.EPIC, effects: [],
+    onPickup: (player) => {
+      player.appliesCold = true;
       player.coldSlowFactor = (player.coldSlowFactor ?? COLD_SLOW_FACTOR_BASE);
       player.coldMaxSlow = player.coldMaxSlow ?? COLD_MAX_SLOW_BASE;
-    } 
+    }
   },
 ];
 
@@ -206,10 +206,10 @@ const EPIC_CARDS: CardDefinition[] = [
 ];
 
 const STAGE3_ASCENSION_CARDS: AscensionDefinition[] = [
-    { 
-        id: 'bloody_mage_ascension', name: 'Bloody Mage', 
-        description: 'O sangramento agora causa 50% mais dano por tick do valor base do Wound.', 
-        rarity: CardRarity.ASCENSION, baseCardId: 'wound_epic', stacksNeeded: 2, 
+    {
+        id: 'bloody_mage_ascension', name: 'Bloody Mage',
+        description: 'O sangramento agora causa 50% mais dano por tick do valor base do Wound.',
+        rarity: CardRarity.ASCENSION, baseCardId: 'wound_epic', stacksNeeded: 2,
         effects: [{ stat: 'bleedDps', value: 1, mode: 'add' }] // Assumes base Wound DPS is 2, so +1 DPS
     },
     {
@@ -304,92 +304,159 @@ export const BASE_PLAYER_STATS: PlayerStats = {
   barrierBreakProjectileDamageMultiplier: 0,
 };
 
-// --- Enemy types ---
+// --- Enemy Projectile & AI Defaults ---
+export const DEFAULT_ENEMY_PROJECTILE_SPEED = 3;
+export const ENEMY_AIM_LEAD_FACTOR = 0.1; // How much to lead shots (0 = direct, 1 = perfect lead assuming constant player speed)
+export const ENEMY_PROJECTILE_BASE_SIZE = 6;
+export const ENEMY_PROJECTILE_DEFAULT_COLOR = '#FF69B4'; // Hot Pink
+export const ENEMY_PROJECTILE_DEFAULT_VISUAL_TYPE: ProjectileVisualType = 'circle';
+export const MIN_ENEMY_SEPARATION_DISTANCE = 30; // Min distance enemies try to keep from each other
+export const MUZZLE_FLASH_COLOR = '#FFA500'; // Orange
+export const MUZZLE_FLASH_DURATION = 100; // ms
+export const MUZZLE_FLASH_SIZE = 8;
+
+// --- Enemy types (Firearm Overhaul) ---
 export const ENEMY_TYPES: Record<string, EnemyType> = {
-  grunt_standard: {
+  grunt_standard: { // Assault Rifle
     id: 'grunt_standard',
-    name: 'Standard Grunt',
-    baseHp: 20,
-    baseSpeed: 1,
-    baseDamage: 5,
-    width: 25, 
+    name: 'Rifle Grunt',
+    baseHp: 25,
+    baseSpeed: 1.0,
+    baseDamage: 3, // Damage per bullet
+    width: 25,
     height: 25,
     color: '#2ECC71', // Emerald Green
-    points: 5,
-    expValue: 10,
+    points: 7,
+    expValue: 12,
+    firearmType: 'rifle',
+    attackCooldown: 1500, // Time between start of bursts
+    attackRange: 400,
+    attackTelegraphTime: 200, // Brief aim pause
+    projectileSpeed: DEFAULT_ENEMY_PROJECTILE_SPEED * 1.5,
+    projectilesInBurst: 3,
+    burstInterval: 100, // ms between bullets in a burst
+    optimalFiringDistanceMin: 150, 
+    optimalFiringDistanceMax: 350,
+    separationDistance: MIN_ENEMY_SEPARATION_DISTANCE + 5,
+    eliteAttackCooldownMultiplier: 0.8, // Faster bursts
+    eliteProjectilesInBurstAdd: 1, // 4 bullets per burst
   },
-  grunt_fast: {
+  grunt_fast: { // SMG
     id: 'grunt_fast',
-    name: 'Fast Grunt',
-    baseHp: 15,
-    baseSpeed: 2, // Keep fast
-    baseDamage: 4,
+    name: 'SMG Grunt',
+    baseHp: 18,
+    baseSpeed: 1.8,
+    baseDamage: 2, // Lower damage per bullet, but many
     width: 20,
     height: 20,
     color: '#3498DB', // Peter River Blue
-    points: 8,
-    expValue: 15,
+    points: 10,
+    expValue: 18,
+    firearmType: 'smg',
+    attackCooldown: 80, // Very fast fire rate (effective cooldown for continuous fire)
+    attackRange: 300,
+    attackTelegraphTime: 100, // Very short aim time
+    projectileSpeed: DEFAULT_ENEMY_PROJECTILE_SPEED * 1.3,
+    smgSpreadAngle: 0.25, // Radians, slight spread
+    optimalFiringDistanceMin: 100, 
+    optimalFiringDistanceMax: 250,
+    separationDistance: MIN_ENEMY_SEPARATION_DISTANCE,
+    eliteAttackCooldownMultiplier: 0.7, // Even faster SMG
+    eliteDamageMultiplier: 1.2,
   },
-  grunt_tough: {
+  grunt_tough: { // Shotgun
     id: 'grunt_tough',
-    name: 'Tough Grunt',
-    baseHp: 50,
-    baseSpeed: 0.8, // Base speed, can be modified by AI
-    baseDamage: 8,
+    name: 'Shotgun Grunt',
+    baseHp: 60,
+    baseSpeed: 0.7,
+    baseDamage: 4, // Damage per pellet
     width: 30,
     height: 30,
     color: '#7F8C8D', // Asbestos Grey
-    points: 12,
-    expValue: 25,
+    points: 15,
+    expValue: 30,
+    firearmType: 'shotgun',
+    attackCooldown: 2000, // Slower firing
+    attackRange: 200, // Shorter range
+    attackTelegraphTime: 400,
+    projectileSpeed: DEFAULT_ENEMY_PROJECTILE_SPEED * 1.1,
+    projectileVisualType: 'pellet',
+    shotgunPelletCount: 5,
+    shotgunSpreadAngle: 0.6, // Wider spread
+    optimalFiringDistanceMin: 90, 
+    optimalFiringDistanceMax: 180,
+    separationDistance: MIN_ENEMY_SEPARATION_DISTANCE + 10,
+    eliteShotgunPelletCountAdd: 3, // 8 pellets
+    eliteAttackCooldownMultiplier: 0.85,
   },
-  shooter_basic: {
+  shooter_basic: { // Wave Beam Rifle
     id: 'shooter_basic',
-    name: 'Basic Shooter',
-    baseHp: 25,
-    baseSpeed: 0.7, // Slower horizontal patrol
-    baseDamage: 6, // Projectile damage
+    name: 'Wave Shooter',
+    baseHp: 30,
+    baseSpeed: 0.6,
+    baseDamage: 7,
     width: 28,
     height: 28,
     color: '#E67E22', // Carrot Orange
-    points: 10,
-    expValue: 20,
-    attackCooldown: 2200, // ms
-    projectileSpeed: 4.5, // Added
+    points: 12,
+    expValue: 22,
+    firearmType: 'beam_rifle',
+    attackCooldown: 2500,
+    attackRange: 450,
+    attackTelegraphTime: 500,
+    projectileSpeed: DEFAULT_ENEMY_PROJECTILE_SPEED * 0.9, // Wave might be slightly slower
+    projectileWaveAmplitude: 20,
+    projectileWaveFrequency: 4,
+    optimalFiringDistanceMin: 220, 
+    optimalFiringDistanceMax: 400,
+    separationDistance: MIN_ENEMY_SEPARATION_DISTANCE + 15,
+    eliteWaveAmplitudeMultiplier: 1.5, // More erratic wave
+    eliteProjectilesInBurstAdd: 1, // Fires two waves in quick succession (total 2)
+    burstInterval: 300,
   }
 };
 
 // --- Game Configuration ---
-export const ENEMY_SPAWN_INTERVAL_MIN = 2000; // Minimum ms between spawns
-export const ENEMY_SPAWN_INTERVAL_MAX = 4000; // Maximum ms between spawns
-export const MAX_ENEMIES_ON_SCREEN_BASE = 5;
+export const ENEMY_SPAWN_INTERVAL_MIN = 1800; // Slightly faster spawns
+export const ENEMY_SPAWN_INTERVAL_MAX = 3600;
+export const MAX_ENEMIES_ON_SCREEN_BASE = 6; // Allow a few more enemies
 export const MAX_ENEMIES_ON_SCREEN_PER_LEVEL = 1;
 
 export const ENEMY_HP_SCALING_PER_LEVEL = 1.15;
 export const ENEMY_DAMAGE_SCALING_PER_LEVEL = 1.08;
 export const ENEMY_EXP_SCALING_PER_LEVEL = 1.1;
 
-export const CARD_CHOICES_COUNT = 3; // Base number of choices
+export const CARD_CHOICES_COUNT = 3;
 
 export const PLAYER_INITIAL_HAT_ID = 'wizard_hat';
 export const PLAYER_INITIAL_STAFF_ID = 'wizard_staff';
-export const STAFF_VISUAL_LENGTH = 25; // Length of the staff visual from player center
-
-// --- Enemy AI & Projectile Constants ---
-export const SHOOTER_ATTACK_RANGE = 350; // pixels, increased range
-export const ENEMY_PROJECTILE_COLOR = '#FF00FF'; // Magenta
-export const ENEMY_PROJECTILE_SIZE = 7; // pixels
-export const ENEMY_PROJECTILE_VISUAL_TYPE: ProjectileVisualType = 'circle';
-export const GRUNT_TOUGH_AGGRO_RANGE = 220; // pixels, increased range
-export const GRUNT_TOUGH_AGGRO_SPEED_MULTIPLIER = 1.25; // Slightly faster when aggroed
-export const SHOOTER_PATROL_SPEED_MULTIPLIER = 0.5; // Slower horizontal movement when patrolling
-export const SHOOTER_ATTACKING_SPEED_MULTIPLIER = 0.1; // Very slow when in attack range
+export const STAFF_VISUAL_LENGTH = 25;
 
 // --- Wound Card Constants ---
-export const BLEED_TICK_INTERVAL = 1000; // ms
-export const BLEED_PARTICLE_COLOR = '#8B0000'; // Dark Red
+export const BLEED_TICK_INTERVAL = 1000;
+export const BLEED_PARTICLE_COLOR = '#8B0000';
 
 // --- Stage 2 Particle Colors ---
-export const THUNDERBOLT_COLOR = '#FFFF00'; // Yellow
-export const BARRIER_ACTIVE_COLOR = '#00FFFF'; // Cyan
-export const COLD_HIT_COLOR = '#ADD8E6'; // Light Blue
-export const FRAGMENT_SPAWN_COLOR = '#FFA500'; // Orange
+export const THUNDERBOLT_COLOR = '#FFFF00';
+export const BARRIER_ACTIVE_COLOR = '#00FFFF';
+export const COLD_HIT_COLOR = '#ADD8E6';
+export const FRAGMENT_SPAWN_COLOR = '#FFA500';
+
+// --- Elite Variant Constants ---
+export const ELITE_SPAWN_CHANCE_BASE = 0.12; // Slightly higher chance
+export const ELITE_HP_MULTIPLIER = 2.0;
+// ELITE_DAMAGE_MULTIPLIER is now in EnemyType for more granular control
+export const ELITE_SIZE_MULTIPLIER = 1.15;
+export const ELITE_AURA_COLOR = '#FF00FF'; // Magenta aura
+export const ELITE_TELEGRAPH_TINT_COLOR = '#FFA500'; // Orange tint for telegraphing
+
+// Constants for removed projectile types (gravity, homing defaults) are no longer needed here.
+// export const DEFAULT_PROJECTILE_GRAVITY = 0.05;
+// export const DEFAULT_HOMING_FACTOR = 0.03;
+// export const DEFAULT_WAVE_FREQUENCY = 5; // Now in shooter_basic definition
+// export const DEFAULT_ENEMY_PROJECTILE_SPEED = 3.5; // Now in individual enemy defs
+// export const ELITE_SHOOTER_BURST_INTERVAL = 150; // Replaced by burstInterval in EnemyType
+// export const GRUNT_TOUGH_AGGRO_RANGE = 220; // Replaced by optimalFiringDistance
+// export const GRUNT_TOUGH_AGGRO_SPEED_MULTIPLIER = 1.25; // Speed logic changed
+// export const SHOOTER_PATROL_SPEED_MULTIPLIER = 0.5; // Speed logic changed
+// export const SHOOTER_ATTACKING_SPEED_MULTIPLIER = 0.1; // Speed logic changed
