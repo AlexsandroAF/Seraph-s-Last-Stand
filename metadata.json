@@ -1,0 +1,6 @@
+{
+  "name": "Seraph's Last Stand",
+  "description": "A web-based roguelike shoot 'em up where a mage battles infinite waves of enemies, inspired by the indie game. Collect upgrades to create powerful builds.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
